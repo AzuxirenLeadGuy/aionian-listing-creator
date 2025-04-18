@@ -1,0 +1,3 @@
+[submodule "AionianBible_DataFileStandard"]
+	path = AionianBible_DataFileStandard
+	url = https://github.com/Nainoia-Inc/AionianBible_DataFileStandard.git
