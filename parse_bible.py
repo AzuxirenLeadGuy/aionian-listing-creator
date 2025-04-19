@@ -122,7 +122,8 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
         except:
             return None
 
-    if line.strip() == 'INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT':
+    line = line.strip()
+    if line == 'INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT':
         return (Noia_Line_Type.Header, line)
     data = parse_VerseLine(line)
     if type(data) == VerseLine:

@@ -39,8 +39,8 @@ if __name__ == "__main__":
         filename = filename.replace(".noia", ".json")
         path = f"{DEST_DIR}/{filename}"
 
-        with open(path, "w") as file:
-            json.dump(data, file)
+        with open(path, "w", encoding='utf8') as file:
+            json.dump(data, file, ensure_ascii=False)
 
         bible_listing.append(
             {
@@ -51,7 +51,7 @@ if __name__ == "__main__":
                 "size": os.path.getsize(path),
             }
         )
-    with open(f"{DEST_DIR}/bible_listing.json") as file:
-        json.dump(bible_listing, file)
+    with open(f"{DEST_DIR}/bible_listing.json", 'w+', encoding='utf8') as file:
+        json.dump(bible_listing, file, ensure_ascii=False)
 
     print("\nAll files have been writted successfully\n")
