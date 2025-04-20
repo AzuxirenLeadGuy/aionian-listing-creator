@@ -1,3 +1,6 @@
 [submodule "AionianBible_DataFileStandard"]
 	path = AionianBible_DataFileStandard
 	url = https://github.com/Nainoia-Inc/AionianBible_DataFileStandard.git
+[submodule "aionian-json-listing"]
+	path = aionian-json-listing
+	url = git@github.com:AzuxirenLeadGuy/aionian-json-listing.git
