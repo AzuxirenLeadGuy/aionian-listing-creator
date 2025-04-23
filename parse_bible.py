@@ -1,6 +1,7 @@
 import os
 from enum import Enum
 
+
 class Noia_Line_Type(Enum):
     """Any given line in the `.noia` file can be any of these types"""
 
@@ -18,6 +19,7 @@ class Noia_Line_Type(Enum):
 
     Invalid = 4
     """This line shows that the file being read is corrupted/invalid noia bible database"""
+
 
 class BookBeginLine:
     """The data representing a BookBegin section line"""
@@ -39,6 +41,7 @@ class BookBeginLine:
         self.short_name = short_name
         self.eng_name = eng_name
         self.reg_name = reg_name
+
 
 class VerseLine:
     """Data related to a verse line from the `.noia` file"""
@@ -72,6 +75,7 @@ class VerseLine:
         self.verse_id = verse_id
         self.verse = verse
 
+
 def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
     """
     Parse a single line of a `.noia` bible
@@ -85,12 +89,15 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
     """
 
     def parse_BookBeginLine(line: str) -> BookBeginLine | None:
-        """
-        Parses the line into a `BookBeginLine` object if valid/possible,
-        otherwise returns a None type
+        """Try to parse line as a BookBeginLine object, if valid
 
         Args:
             line (str): The line to parse
+
+        Returns:
+            BookBeginLine | None: If line is a valid verse line, a
+             BookBeginLine object ir returned,
+             otherwise a None object is returned
         """
         if line.startswith("# BOOK") == False:
             return None
@@ -108,6 +115,16 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
             return None
 
     def parse_VerseLine(line: str) -> VerseLine | None:
+        """Try to parse line as a VerseLine object, if valid
+
+        Args:
+            line (str): The line to parse
+
+        Returns:
+            VerseLine | None: If line is a valid verse line, a
+             VerseLine object ir returned,
+             otherwise a None object is returned
+        """
         line = line.split("\t")
         if len(line) != 5:
             return None
@@ -123,7 +140,7 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
             return None
 
     line = line.strip()
-    if line == 'INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT':
+    if line == "INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT":
         return (Noia_Line_Type.Header, line)
     data = parse_VerseLine(line)
     if type(data) == VerseLine:
@@ -134,6 +151,109 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
     if line.startswith("#"):
         return (Noia_Line_Type.Comments, line[1:].strip())
     return (Noia_Line_Type.Invalid, line)
+
+
+class Context:
+    """
+    Private class for parsing noia file.
+    """
+
+    metadata : dict
+    """The list of metadata entries"""
+
+    content : dict
+    """The collection of chapters and verses within all books"""
+
+    listing : dict
+    """The list of books of bible available in this database"""
+
+    current_book_no : int
+    """State variable for the current book number"""
+
+    current_book_content : dict
+    """State variable for the current book content"""
+
+    current_chapter_no : int
+    """State variable for the current chapter number"""
+
+    current_chapter : dict
+    """State variable for the current chapter content"""
+
+    def __init__(self):
+        self.metadata = {}
+        self.content = {}
+        self.listing = {}
+        self.current_book_no = 0
+        self.current_book_content = {}
+        self.current_chapter_no = 0
+        self.current_chapter = {}
+
+    def finish_chapter(self):
+        """
+        Update and complete the dictionaries for the current chapter
+
+        Args:
+            self (_Context): The Context object
+        """
+        if len(self.current_chapter) > 0:
+            self.current_book_content[self.current_chapter_no] = self.current_chapter
+        self.current_chapter = {}
+
+    def finish_book(self):
+        if len(self.current_book_content) > 0:
+            # """Complete the content for this book"""
+            self.content[self.current_book_no] = self.current_book_content
+        self.current_book_content = {}
+
+    def handle_verse_line(self, line: VerseLine):
+        """
+        Input a single line containing bible verse
+
+        Args:
+            line (VerseLine): The verse parsed from the current line
+        """
+        if self.current_chapter_no != line.chapter_id:
+            self.finish_chapter()
+            self.current_chapter_no = line.chapter_id
+
+        self.current_chapter[line.verse_id] = line.verse
+
+    def handle_bookbegin_line(self, line: BookBeginLine):
+        """
+        Input a single line containing the header before a new bible book
+
+        Args:
+            line (VerseLine): The header line parsed from the current line
+        """
+        self.finish_chapter()
+        self.finish_book()
+        self.listing[line.book_id] = line.reg_name
+        self.current_book_no = line.book_id
+
+    def handle_comment_line(self, value: str):
+        """
+        Handle single line of comment
+
+        Args:
+            self (_Context): The Context object
+            value (str): The comment line being read
+        """
+        if ":" not in value:
+            return
+        index_val = value.index(":")
+        key = value[:index_val].strip()
+        value = value[index_val + 1 :].strip()
+        self.metadata[key] = value
+
+    def handle_eof(self):
+        """Close all content as EOF(End of File) reached
+
+        Args:
+            self (_Context): The Context object
+        """
+        self.finish_chapter()
+        self.finish_book()
+
 
 def parse_noia_bible(path: str) -> tuple[dict, dict, dict]:
     """
@@ -152,72 +272,28 @@ def parse_noia_bible(path: str) -> tuple[dict, dict, dict]:
     """
     assert os.path.isfile(path), "invalid path for file"
 
-    class Context:
-        metadata = {}
-        content = {}
-        listing = {}
-    
-        current_book_no = 0
-        current_book_content = {}
-        current_chapter_no = 0
-        current_chapter = {}
-    
     cur_context = Context()
-
     with open(path, "r") as file:
-
-        def finish_chapter(context:Context):
-            if len(context.current_chapter) > 0:
-                context.current_book_content[context.current_chapter_no] = context.current_chapter
-            context.current_chapter = {}
-
-        def finish_book(context:Context):
-            if len(context.current_book_content) > 0:
-                context.content[context.current_book_no] = context.current_book_content
-            context.current_book_content = {}
-        
-        def handle_verse_line(context:Context, value:VerseLine):
-            if context.current_chapter_no != value.chapter_id:
-                    finish_chapter(context)
-                    context.current_chapter_no = value.chapter_id
-
-            context.current_chapter[value.verse_id] = value.verse
-        
-        def handle_bookbegin_line(context:Context, value:BookBeginLine):
-            finish_chapter(context)
-            finish_book(context)
-            context.listing[value.book_id] = value.reg_name
-            context.current_book_no = value.book_id
-
-
         # Loop to iterate each line of the file
         line = file.readline()
         while line != None and len(line) > 0:
-
             # Try parsing line as verse content
             line_type: Noia_Line_Type
             line_type, data = parse_line(line)
 
             assert line_type != Noia_Line_Type.Invalid, f"Invalid line: {line}"
 
-            if line_type==Noia_Line_Type.BookBegin:
-                handle_bookbegin_line(cur_context, data)
+            if line_type == Noia_Line_Type.BookBegin:
+                cur_context.handle_bookbegin_line(data)
 
             elif line_type == Noia_Line_Type.Verse:
-                handle_verse_line(cur_context, data)
+                cur_context.handle_verse_line(data)
 
-            else: # line_type in [Noia_Line_Type.Comments,Noia_Line_Type.Header]
-                value : str = data
-                if ':' in value:
-                    index_val = value.index(':')
-                    key = value[:index_val].strip()
-                    value = value[index_val+1:].strip()
-                    cur_context.metadata[key] = value
+            else:  # line_type in [Noia_Line_Type.Comments,Noia_Line_Type.Header]
+                cur_context.handle_comment_line(data)
 
             # Read next line
             line = file.readline()
-        
-        finish_chapter(cur_context)
-        finish_book(cur_context)
 
+        cur_context.handle_eof()
         return cur_context.metadata, cur_context.listing, cur_context.content

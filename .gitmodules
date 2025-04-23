@@ -4,3 +4,6 @@
 [submodule "aionian-json-listing"]
 	path = aionian-json-listing
 	url = git@github.com:AzuxirenLeadGuy/aionian-json-listing.git
+[submodule "doc.wiki"]
+	path = doc.wiki
+	url = git@github.com:AzuxirenLeadGuy/aionian-listing-creator.wiki.git
