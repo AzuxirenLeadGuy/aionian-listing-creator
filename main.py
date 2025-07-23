@@ -97,6 +97,7 @@ if __name__ == "__main__":
             size_dest,
             (size_source - size_dest) / (size_source * 1.0),
         )
+    bible_listing.sort(key=lambda x: x["filename"])
     file_store(f"{dest}/bible_listing.{extn}", bible_listing, store_fn)
 
     print("\nAll files have been writted successfully\n")
