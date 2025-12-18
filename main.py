@@ -1,9 +1,11 @@
+
 import os
 import json
-from parse_bible import parse_noia_bible
-from tqdm import tqdm
 import argparse
 import yaml
+from tqdm import tqdm
+
+from parse_bible import parse_noia_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
 DEST_DIR_DEFAULT = "aionian-json-listing"
@@ -34,20 +36,38 @@ if __name__ == "__main__":
             "--format",
             "-f",
             type=str,
-            choices=["yaml", "json"],
+            choices=["yaml", "json", "jsonl"],
             default="json",
             help="The output format of the files to store",
         )
         return parser.parse_args()
-    
+
     def store_json(data, fileptr):
         json.dump(data, fileptr, indent=1, ensure_ascii=False)
-    
+
     def store_yaml(data, fileptr):
         yaml.dump(data, fileptr, indent=1, allow_unicode=True, width=50000)
-    
-    def file_store(path:str, data, func):
-        with open(path, 'w+', encoding="utf8") as file:
+
+    def store_jsonl(data, fileptr):
+        if isinstance(data, list):
+            for item in data:
+                json.dump(item, fileptr, indent=None, ensure_ascii=False)
+                fileptr.write("\n")
+        else:
+            # items in data: [index, tags, <chapter_ids>]
+            indexing = data["index"]
+            bible_tags = data["tags"]
+            json.dump(indexing, fileptr, indent=None, ensure_ascii=False)
+            fileptr.write("\n")
+            for key in indexing:
+                chapter = data[key]
+                json.dump(chapter, fileptr, indent=None, ensure_ascii=False)
+                fileptr.write("\n")
+            json.dump(bible_tags, fileptr, indent=None, ensure_ascii=False)
+            fileptr.write("\n")
+
+    def file_store(path: str, data, func):
+        with open(path, "w+", encoding="utf8") as file:
             func(data, file)
 
     print(WELCOME_MSG)
@@ -56,7 +76,7 @@ if __name__ == "__main__":
     source = args.input
     dest = args.output
     extn = args.format
-    store_fn = store_json if extn == 'json' else store_yaml
+    store_fn = store_json if extn == "json" else store_jsonl if extn == "jsonl" else store_yaml
     os.makedirs(dest, exist_ok=True)
 
     # Check for the presence of source and destination directories

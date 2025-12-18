@@ -2,22 +2,22 @@ import os
 from enum import Enum
 
 
-class Noia_Line_Type(Enum):
+class NoiaLineType(Enum):
     """Any given line in the `.noia` file can be any of these types"""
 
-    Comments = 0
+    COMMENT_LINE = 0
     """An ordinary comment"""
 
-    BookBegin = 1
+    BOOK_START_LINE = 1
     """A special comment that preceeds a new book"""
 
-    Verse = 2
+    VERSE_LINE = 2
     """Verse content"""
 
-    Header = 3
+    HEADER_LINE = 3
     """A header value of the `.noia` file"""
 
-    Invalid = 4
+    INVALID = 4
     """This line shows that the file being read is corrupted/invalid noia bible database"""
 
 
@@ -76,7 +76,7 @@ class VerseLine:
         self.verse = verse
 
 
-def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
+def parse_line(line: str) -> tuple:
     """
     Parse a single line of a `.noia` bible
 
@@ -88,7 +88,7 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
             returns a tuple of the Noia_Line_Type Enum and the parsed object
     """
 
-    def parse_BookBeginLine(line: str) -> BookBeginLine | None:
+    def parse_book_begin_line(line: str) -> BookBeginLine | None:
         """Try to parse line as a BookBeginLine object, if valid
 
         Args:
@@ -99,22 +99,22 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
              BookBeginLine object ir returned,
              otherwise a None object is returned
         """
-        if line.startswith("# BOOK") == False:
+        if line.startswith("# BOOK") is False:
             return None
-        line = line.split("\t")
-        if len(line) != 5:
+        line_parts = line.split("\t")
+        if len(line_parts) != 5:
             return None
         try:
             return BookBeginLine(
-                book_id=int(line[1]),
-                short_name=line[2],
-                eng_name=line[3],
-                reg_name=line[4],
+                book_id=int(line_parts[1]),
+                short_name=line_parts[2],
+                eng_name=line_parts[3],
+                reg_name=line_parts[4],
             )
         except:
             return None
 
-    def parse_VerseLine(line: str) -> VerseLine | None:
+    def parse_verse_line(line: str) -> VerseLine | None:
         """Try to parse line as a VerseLine object, if valid
 
         Args:
@@ -125,32 +125,32 @@ def parse_line(line: str) -> tuple[Noia_Line_Type, any]:
              VerseLine object ir returned,
              otherwise a None object is returned
         """
-        line = line.split("\t")
-        if len(line) != 5:
+        line_parts = line.split("\t")
+        if len(line_parts) != 5:
             return None
         try:
             return VerseLine(
-                book_id=int(line[0]),
-                book_short_name=line[1],
-                chapter_id=int(line[2]),
-                verse_id=int(line[3]),
-                verse=line[4],
+                book_id=int(line_parts[0]),
+                book_short_name=line_parts[1],
+                chapter_id=int(line_parts[2]),
+                verse_id=int(line_parts[3]),
+                verse=line_parts[4],
             )
         except:
             return None
 
     line = line.strip()
     if line == "INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT":
-        return (Noia_Line_Type.Header, line)
-    data = parse_VerseLine(line)
-    if type(data) == VerseLine:
-        return (Noia_Line_Type.Verse, data)
-    data = parse_BookBeginLine(line)
-    if type(data) == BookBeginLine:
-        return (Noia_Line_Type.BookBegin, data)
+        return (NoiaLineType.HEADER_LINE, line)
+    data = parse_verse_line(line)
+    if isinstance(data, VerseLine):
+        return (NoiaLineType.VERSE_LINE, data)
+    data = parse_book_begin_line(line)
+    if isinstance(data, BookBeginLine):
+        return (NoiaLineType.BOOK_START_LINE, data)
     if line.startswith("#"):
-        return (Noia_Line_Type.Comments, line[1:].strip())
-    return (Noia_Line_Type.Invalid, line)
+        return (NoiaLineType.COMMENT_LINE, line[1:].strip())
+    return (NoiaLineType.INVALID, line)
 
 
 class Context:
@@ -158,25 +158,25 @@ class Context:
     Private class for parsing noia file.
     """
 
-    metadata : dict
+    metadata: dict
     """The list of metadata entries"""
 
-    content : dict
+    content: dict
     """The collection of chapters and verses within all books"""
 
-    listing : dict
+    listing: dict
     """The list of books of bible available in this database"""
 
-    current_book_no : int
+    current_book_no: int
     """State variable for the current book number"""
 
-    current_book_content : dict
+    current_book_content: dict
     """State variable for the current book content"""
 
-    current_chapter_no : int
+    current_chapter_no: int
     """State variable for the current chapter number"""
 
-    current_chapter : dict
+    current_chapter: dict
     """State variable for the current chapter content"""
 
     def __init__(self):
@@ -200,6 +200,12 @@ class Context:
         self.current_chapter = {}
 
     def finish_book(self):
+        """
+        Finalizes the dictionaries for any book and chapter in the instance
+
+        Args:
+            self (_Context): The Context object
+        """
         if len(self.current_book_content) > 0:
             # """Complete the content for this book"""
             self.content[self.current_book_no] = self.current_book_content
@@ -242,7 +248,7 @@ class Context:
             return
         index_val = value.index(":")
         key = value[:index_val].strip()
-        value = value[index_val + 1 :].strip()
+        value = value[index_val + 1:].strip()
         self.metadata[key] = value
 
     def handle_eof(self):
@@ -276,17 +282,17 @@ def parse_noia_bible(path: str) -> tuple[dict, dict, dict]:
     with open(path, "r") as file:
         # Loop to iterate each line of the file
         line = file.readline()
-        while line != None and len(line) > 0:
+        while line is not None and len(line) > 0:
             # Try parsing line as verse content
-            line_type: Noia_Line_Type
+            line_type: NoiaLineType
             line_type, data = parse_line(line)
 
-            assert line_type != Noia_Line_Type.Invalid, f"Invalid line: {line}"
+            assert line_type != NoiaLineType.INVALID, f"Invalid line: {line}"
 
-            if line_type == Noia_Line_Type.BookBegin:
+            if line_type == NoiaLineType.BOOK_START_LINE:
                 cur_context.handle_bookbegin_line(data)
 
-            elif line_type == Noia_Line_Type.Verse:
+            elif line_type == NoiaLineType.VERSE_LINE:
                 cur_context.handle_verse_line(data)
 
             else:  # line_type in [Noia_Line_Type.Comments,Noia_Line_Type.Header]
