@@ -1,3 +1,6 @@
+"""
+This python file contains all the utilities to read and parse a .noia file
+"""
 import os
 from enum import Enum
 
@@ -18,7 +21,7 @@ class NoiaLineType(Enum):
     """A header value of the `.noia` file"""
 
     INVALID = 4
-    """This line shows that the file being read is corrupted/invalid noia bible database"""
+    """The file being read is corrupted/invalid noia bible database"""
 
 
 class BookBeginLine:
@@ -36,7 +39,12 @@ class BookBeginLine:
     reg_name: str
     """The regional name of the book, possibly in unicode"""
 
-    def __init__(self, book_id: int, short_name: str, eng_name: str, reg_name: str):
+    def __init__(
+        self, book_id: int,
+        short_name: str,
+        eng_name: str,
+        reg_name: str,
+    ):
         self.book_id = book_id
         self.short_name = short_name
         self.eng_name = eng_name
@@ -104,15 +112,12 @@ def parse_line(line: str) -> tuple:
         line_parts = line.split("\t")
         if len(line_parts) != 5:
             return None
-        try:
-            return BookBeginLine(
-                book_id=int(line_parts[1]),
-                short_name=line_parts[2],
-                eng_name=line_parts[3],
-                reg_name=line_parts[4],
-            )
-        except:
-            return None
+        return BookBeginLine(
+            book_id=int(line_parts[1]),
+            short_name=line_parts[2],
+            eng_name=line_parts[3],
+            reg_name=line_parts[4],
+        )
 
     def parse_verse_line(line: str) -> VerseLine | None:
         """Try to parse line as a VerseLine object, if valid
@@ -128,26 +133,23 @@ def parse_line(line: str) -> tuple:
         line_parts = line.split("\t")
         if len(line_parts) != 5:
             return None
-        try:
-            return VerseLine(
-                book_id=int(line_parts[0]),
-                book_short_name=line_parts[1],
-                chapter_id=int(line_parts[2]),
-                verse_id=int(line_parts[3]),
-                verse=line_parts[4],
-            )
-        except:
-            return None
+        return VerseLine(
+            book_id=int(line_parts[0]),
+            book_short_name=line_parts[1],
+            chapter_id=int(line_parts[2]),
+            verse_id=int(line_parts[3]),
+            verse=line_parts[4],
+        )
 
     line = line.strip()
     if line == "INDEX\tBOOK\tCHAPTER\tVERSE\tTEXT":
         return (NoiaLineType.HEADER_LINE, line)
-    data = parse_verse_line(line)
-    if isinstance(data, VerseLine):
-        return (NoiaLineType.VERSE_LINE, data)
     data = parse_book_begin_line(line)
     if isinstance(data, BookBeginLine):
         return (NoiaLineType.BOOK_START_LINE, data)
+    data = parse_verse_line(line)
+    if isinstance(data, VerseLine):
+        return (NoiaLineType.VERSE_LINE, data)
     if line.startswith("#"):
         return (NoiaLineType.COMMENT_LINE, line[1:].strip())
     return (NoiaLineType.INVALID, line)
@@ -196,7 +198,9 @@ class Context:
             self (_Context): The Context object
         """
         if len(self.current_chapter) > 0:
-            self.current_book_content[self.current_chapter_no] = self.current_chapter
+            self.current_book_content[
+                self.current_chapter_no
+            ] = self.current_chapter
         self.current_chapter = {}
 
     def finish_book(self):
@@ -279,7 +283,7 @@ def parse_noia_bible(path: str) -> tuple[dict, dict, dict]:
     assert os.path.isfile(path), "invalid path for file"
 
     cur_context = Context()
-    with open(path, "r") as file:
+    with open(path, "r", encoding='utf-8') as file:
         # Loop to iterate each line of the file
         line = file.readline()
         while line is not None and len(line) > 0:
@@ -295,7 +299,7 @@ def parse_noia_bible(path: str) -> tuple[dict, dict, dict]:
             elif line_type == NoiaLineType.VERSE_LINE:
                 cur_context.handle_verse_line(data)
 
-            else:  # line_type in [Noia_Line_Type.Comments,Noia_Line_Type.Header]
+            else:
                 cur_context.handle_comment_line(data)
 
             # Read next line

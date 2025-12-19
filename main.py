@@ -1,22 +1,36 @@
-
+"""
+The main function that prepares a listing for each noia file
+"""
 import os
 import json
 import argparse
-import yaml
 from tqdm import tqdm
 
+from sqlite_store import sqlite_store_bible
+from csv_tar_store import csv_tar_store_bible
 from parse_bible import parse_noia_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
 DEST_DIR_DEFAULT = "aionian-json-listing"
 
-WELCOME_MSG = "Welcome to Aionian to Json parsing software, brought to you by AzuxirenLeadGuy.      "
+WELCOME_MSG = "Welcome to Aionian to Json parsing software by AzuxirenLeadGuy."
 
-ERRMSG_DIR_NOT_FOUND = f"could not locate the needed directories! Ensure that this script is running from the git repository and the submodules are loaded correctly, or download the AionianBible_DataFileStandard manually to set up the input folder correctly."
+ERRMSG_DIR_NOT_FOUND = """
+could not locate the needed directories!
+Ensure that this script is running from
+the git repository and the submodules
+are loaded correctly, or download the
+AionianBible_DataFileStandard manually
+to set up the input folder correctly."""
 
 if __name__ == "__main__":
 
     def cli_args() -> argparse.Namespace:
+        """Prepares the parser for command line arguments for the function
+
+        Returns:
+            argparse.Namespace: The parsed command line arguments
+        """
         parser = argparse.ArgumentParser(prog="aionian-listing-creator")
         parser.add_argument(
             "--input",
@@ -30,53 +44,39 @@ if __name__ == "__main__":
             "-o",
             type=str,
             default=DEST_DIR_DEFAULT,
-            help="The output directory where all generated json files are to be saved.",
+            help="The output directory where all generated files are written.",
         )
         parser.add_argument(
             "--format",
             "-f",
             type=str,
-            choices=["yaml", "json", "jsonl"],
+            choices=["json", "sqlite", "tar"],
             default="json",
             help="The output format of the files to store",
         )
         return parser.parse_args()
 
-    def store_json(data, fileptr):
-        json.dump(data, fileptr, indent=1, ensure_ascii=False)
+    def store_json(data, file_name):
+        """Store the given file as json
 
-    def store_yaml(data, fileptr):
-        yaml.dump(data, fileptr, indent=1, allow_unicode=True, width=50000)
-
-    def store_jsonl(data, fileptr):
-        if isinstance(data, list):
-            for item in data:
-                json.dump(item, fileptr, indent=None, ensure_ascii=False)
-                fileptr.write("\n")
-        else:
-            # items in data: [index, tags, <chapter_ids>]
-            indexing = data["index"]
-            bible_tags = data["tags"]
-            json.dump(indexing, fileptr, indent=None, ensure_ascii=False)
-            fileptr.write("\n")
-            for key in indexing:
-                chapter = data[key]
-                json.dump(chapter, fileptr, indent=None, ensure_ascii=False)
-                fileptr.write("\n")
-            json.dump(bible_tags, fileptr, indent=None, ensure_ascii=False)
-            fileptr.write("\n")
-
-    def file_store(path: str, data, func):
-        with open(path, "w+", encoding="utf8") as file:
-            func(data, file)
+        Args:
+            data: The dictionary of data to store
+            fileptr: The file to store at
+        """
+        with open(file_name, "w+", encoding="utf8") as file:
+            json.dump(data, file, indent=1, ensure_ascii=False)
 
     print(WELCOME_MSG)
 
     args = cli_args()
     source = args.input
-    dest = args.output
     extn = args.format
-    store_fn = store_json if extn == "json" else store_jsonl if extn == "jsonl" else store_yaml
+    dest = f"{args.output}/{extn}"
+    store_fn = store_json
+    if extn == "tar":
+        store_fn = csv_tar_store_bible
+    elif extn == "sqlite":
+        store_fn = sqlite_store_bible
     os.makedirs(dest, exist_ok=True)
 
     # Check for the presence of source and destination directories
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # Prepare a list of source files
     source_list = [
-        filename for filename in os.listdir(source) if filename.endswith(".noia")
+        name for name in os.listdir(source) if name.endswith(".noia")
     ]
 
     # A list of the available files in aionian-json-listing
@@ -92,17 +92,17 @@ if __name__ == "__main__":
     size_ratios = {}
 
     for filename in tqdm(source_list):
-        path = f"{source}/{filename}"
-        metadata, listing, content = parse_noia_bible(path)
-        data = {"tags": metadata, "index": listing} | content
-        size_source = os.path.getsize(path)
+        FILE_PATH = f"{source}/{filename}"
+        metadata, listing, content = parse_noia_bible(FILE_PATH)
+        fulldata = {"tags": metadata, "index": listing} | content
+        size_source = os.path.getsize(FILE_PATH)
 
         filename = filename.replace(".noia", f".{extn}")
-        path = f"{dest}/{filename}"
+        FILE_PATH = f"{dest}/{filename}"
 
-        file_store(path, data, store_fn)
+        store_fn(fulldata, FILE_PATH)
 
-        size_dest = os.path.getsize(path)
+        size_dest = os.path.getsize(FILE_PATH)
         bible_listing.append(
             {
                 "filename": filename,
@@ -118,11 +118,11 @@ if __name__ == "__main__":
             (size_source - size_dest) / (size_source * 1.0),
         )
     bible_listing.sort(key=lambda x: x["filename"])
-    file_store(f"{dest}/bible_listing.{extn}", bible_listing, store_fn)
+    store_json(bible_listing, f"{dest}/{extn}_listing.json")
 
     print("\nAll files have been writted successfully\n")
-    for filename in size_ratios:
-        ss, sd, sr = size_ratios[filename]
-        print(
-            f"noia size: {ss} \t{extn} file size: {sd} \tReduction: {(100 * sr):.3F} %\t| File: {filename}"
-        )
+    for filename, ratio in size_ratios.items():
+        ss, sd, sr = ratio
+        LINE = f"noia size: {ss} \t{extn} file size: {sd} \t"
+        LINE += f"Reduction: {(100 * sr):.3F} %\t| File: {filename}"
+        print(LINE)
