@@ -6,9 +6,10 @@ import json
 import argparse
 from tqdm import tqdm
 
+from parse_bible import parse_noia_bible
+from custom_text_format import custom_text_format
 from sqlite_store import sqlite_store_bible
 from csv_tar_store import csv_tar_store_bible
-from parse_bible import parse_noia_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
 DEST_DIR_DEFAULT = "aionian-json-listing"
@@ -50,7 +51,7 @@ if __name__ == "__main__":
             "--format",
             "-f",
             type=str,
-            choices=["json", "sqlite", "tar"],
+            choices=["json", "sqlite", "tar", "txt"],
             default="json",
             help="The output format of the files to store",
         )
@@ -77,6 +78,8 @@ if __name__ == "__main__":
         store_fn = csv_tar_store_bible
     elif extn == "sqlite":
         store_fn = sqlite_store_bible
+    elif extn == "txt":
+        store_fn = custom_text_format
     os.makedirs(dest, exist_ok=True)
 
     # Check for the presence of source and destination directories
