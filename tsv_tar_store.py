@@ -8,7 +8,7 @@ import io
 # TODO: Change this file to tsv
 
 
-def csv_tar_store_bible(bible_data: dict, file_name: str):
+def tsv_tar_store_bible(bible_data: dict, file_name: str):
     """
     Writes a tar file with the encoded csv files
 
@@ -33,10 +33,10 @@ def csv_tar_store_bible(bible_data: dict, file_name: str):
                     fileobj=buffer,
                 )
         csv_rows = [[tag, value] for tag, value in bible_data['tags'].items()]
-        write_rows_to_csv_buffer('tags.csv', csv_rows)
+        write_rows_to_csv_buffer('tags.tsv', csv_rows)
         index: dict[int, str] = bible_data['index']
         csv_rows = [[book_id, name] for book_id, name in list(index.items())]
-        write_rows_to_csv_buffer('index.csv', csv_rows)
+        write_rows_to_csv_buffer('index.tsv', csv_rows)
         for book_id in index.keys():
             chapter_dict: dict[int, dict[int, str]] = bible_data[book_id]
             csv_rows = []
@@ -45,5 +45,5 @@ def csv_tar_store_bible(bible_data: dict, file_name: str):
                     [chapter_id, verse_id, verse]
                     for verse_id, verse in chapter_content.items()
                 ]
-            write_rows_to_csv_buffer(f'{book_id}.csv', csv_rows)
+            write_rows_to_csv_buffer(f'{book_id}.tsv', csv_rows)
         file.close()
