@@ -7,7 +7,7 @@ import argparse
 from tqdm import tqdm
 
 from parse_bible import parse_noia_bible
-from custom_text_format import custom_text_format
+from custom_text_format import custom_text_format, custom_toml_format
 from sqlite_store import sqlite_store_bible
 from tsv_tar_store import tsv_tar_store_bible
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
             "--format",
             "-f",
             type=str,
-            choices=["json", "sqlite", "tar", "txt"],
+            choices=["json", "sqlite", "tar", "toml", "txt"],
             default="json",
             help="The output format of the files to store",
         )
@@ -120,10 +120,12 @@ if __name__ == "__main__":
     extn = args.format
     dest = f"{args.output}/{extn}"
     store_fn = store_json
+    if extn == "sqlite":
+        store_fn = sqlite_store_bible
     if extn == "tar":
         store_fn = tsv_tar_store_bible
-    elif extn == "sqlite":
-        store_fn = sqlite_store_bible
+    elif extn == "toml":
+        store_fn = custom_toml_format
     elif extn == "txt":
         store_fn = custom_text_format
     os.makedirs(dest, exist_ok=True)

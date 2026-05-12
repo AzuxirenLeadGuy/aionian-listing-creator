@@ -10,28 +10,32 @@ def sqlite_store_bible(bible_data: dict, file_name: str):
         data: The dictionary of data to store
         fileptr: The file to store at
     """
+    TABLE_TAGS = 'TAGS'
+    TABLE_BOOK = 'BOOK'
+    TABLE_DATA = 'DATA'
+
     with sqlite3.connect(file_name) as connection:
         cursor = connection.cursor()
         data_tag: dict[str, str] = bible_data['tags']
         cursor.execute(
-            '''CREATE TABLE metadata(
+            f'''CREATE TABLE {TABLE_TAGS}(
                 key TEXT PRIMARY KEY,
                 value TEXT
             );'''
         )
         for item, value in data_tag.items():
-            cursor.execute('INSERT INTO metadata VALUES(?, ?)', (item, value))
+            cursor.execute(f'INSERT INTO {TABLE_TAGS} VALUES(?, ?)', (item, value))
         connection.commit()
         data_index: dict[int, str] = bible_data['index']
         cursor.execute(
-            'CREATE TABLE book_index(book_id INT8 PRIMARY KEY, name TEXT);'
+            f'CREATE TABLE {TABLE_BOOK}(book_id INT8 PRIMARY KEY, name TEXT);'
         )
         for item, value in data_index.items():
             cursor.execute(
-                'INSERT INTO book_index VALUES(?, ?)', (item, value))
+                f'INSERT INTO {TABLE_BOOK} VALUES(?, ?);', (item, value))
         connection.commit()
         cursor.execute(
-            '''CREATE TABLE content(
+            f'''CREATE TABLE {TABLE_DATA}(
                 book_id INT8,
                 chapter_id INT8,
                 verse_id INT8,
@@ -43,7 +47,7 @@ def sqlite_store_bible(bible_data: dict, file_name: str):
             for chapter_id, chapter_dict in book_dict.items():
                 for verse_id, verse_content in chapter_dict.items():
                     cursor.execute(
-                        "INSERT INTO content VALUES(?, ?, ?, ?);",
+                        f"INSERT INTO {TABLE_DATA} VALUES(?, ?, ?, ?);",
                         (book_id, chapter_id, verse_id, verse_content),
                     )
         connection.commit()

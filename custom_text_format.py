@@ -20,3 +20,22 @@ def custom_text_format(bible_data: dict, file_name: str):
                 file.write(f"{chapter_id}\t{len(chapter_map)}\n")
                 for verse_id, verse_str in chapter_map.items():
                     file.write(f"{verse_id}\t{verse_str}\n")
+
+
+def custom_toml_format(bible_data: dict, file_name: str):
+    with open(file_name, "w+", encoding="utf8") as file:
+        tags: dict[str, str] = bible_data["tags"]
+        index: dict[int, str] = bible_data["index"]
+        file.write("[tags]\n")
+        for tag_id, tag_value in tags.items():
+            file.write(f"'{tag_id}'='{tag_value}'\n")
+        file.write("[index]\n")
+        for book_id, book_name in index.items():
+            file.write(f"{book_id}='{book_name}'\n")
+        for book_id in index.keys():
+            chap_map:dict[int, dict[int, str]] = bible_data[book_id]
+            for chap, chap_content in chap_map.items():
+                file.write(f'[{book_id}.{chap}]\n')
+                for verse_id, verse_str in chap_content.items():
+                    file.write(f'{verse_id}="{verse_str}"\n')
+
