@@ -7,9 +7,8 @@ import argparse
 from tqdm import tqdm
 
 from parse_bible import parse_noia_bible
-from custom_text_format import custom_text_format, custom_toml_format
+from custom_text_format import custom_toml_format, tsv_store_bible
 from sqlite_store import sqlite_store_bible
-from tsv_tar_store import tsv_tar_store_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
 DEST_DIR_DEFAULT = "aionian-json-listing"
@@ -97,7 +96,7 @@ if __name__ == "__main__":
             "--format",
             "-f",
             type=str,
-            choices=["json", "sqlite", "tar", "toml", "txt"],
+            choices=["json", "sqlite", "toml", "tsv"],
             default="json",
             help="The output format of the files to store",
         )
@@ -122,12 +121,10 @@ if __name__ == "__main__":
     store_fn = store_json
     if extn == "sqlite":
         store_fn = sqlite_store_bible
-    if extn == "tar":
-        store_fn = tsv_tar_store_bible
     elif extn == "toml":
         store_fn = custom_toml_format
-    elif extn == "txt":
-        store_fn = custom_text_format
+    elif extn == "tsv":
+        store_fn = tsv_store_bible
     os.makedirs(dest, exist_ok=True)
 
     # Check for the presence of source and destination directories
@@ -140,7 +137,7 @@ if __name__ == "__main__":
 
     # A list of the available files in aionian-json-listing
     bible_listing: list[BibleListingItem] = []
-    size_ratios = {}
+    size_ratios:dict[str, tuple[int, int, float]] = {}
 
     for filename in tqdm(source_list):
         FILE_PATH = f"{source}/{filename}"
@@ -178,6 +175,6 @@ if __name__ == "__main__":
     print("\nAll files have been writted successfully\n")
     for filename, ratio in size_ratios.items():
         ss, sd, sr = ratio
-        LINE = f"noia size: {ss} \t{extn} file size: {sd} \t"
+        LINE = f"noia size: {ss:09} \t{extn} file size: {sd:09} \t"
         LINE += f"Reduction: {(100 * sr):.3F} %\t| File: {filename}"
         print(LINE)
