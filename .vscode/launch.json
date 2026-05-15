@@ -29,30 +29,6 @@
             ]
         },
         {
-            "name": "Build tar files: main.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "main.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-i=./AionianBible_DataFileStandard",
-                "-o=./aionian-json-listing",
-                "-f=tar",
-            ]
-        },
-        {
-            "name": "Build txt files: main.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "main.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-i=./AionianBible_DataFileStandard",
-                "-o=./aionian-json-listing",
-                "-f=txt",
-            ]
-        },
-        {
             "name": "Build TOML files: main.py",
             "type": "debugpy",
             "request": "launch",
@@ -62,6 +38,18 @@
                 "-i=./AionianBible_DataFileStandard",
                 "-o=./aionian-json-listing",
                 "-f=toml",
+            ]
+        },
+        {
+            "name": "Build tsv files: main.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-i=./AionianBible_DataFileStandard",
+                "-o=./aionian-json-listing",
+                "-f=tsv",
             ]
         },
     ]
