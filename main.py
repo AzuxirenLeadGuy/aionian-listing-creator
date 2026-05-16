@@ -4,7 +4,7 @@ The main function that prepares a listing for each noia file
 import os
 import json
 import argparse
-from tqdm import tqdm
+from progressbar import ProgressWithLogging
 
 from parse_bible import parse_noia_bible
 from custom_text_format import custom_toml_format, tsv_store_bible
@@ -139,7 +139,8 @@ if __name__ == "__main__":
     bible_listing: list[BibleListingItem] = []
     size_ratios:dict[str, tuple[int, int, float]] = {}
 
-    for filename in tqdm(source_list):
+    progress_bar = ProgressWithLogging()
+    for filename in progress_bar.run_progress(source_list):
         FILE_PATH = f"{source}/{filename}"
         metadata, index, content = parse_noia_bible(FILE_PATH)
         fulldata = {"tags": metadata, "index": index} | content
@@ -166,6 +167,13 @@ if __name__ == "__main__":
             size_dest,
             (size_source - size_dest) / (size_source * 1.0),
         )
+        progress_bar.channel.put(
+            f"{filename} processed."
+        )
+        reduction = (size_source - size_dest) / (size_source * 1.0)
+        LINE = f"noia size: {size_source:09} \t{extn} file size: {size_dest:09} \t"
+        LINE += f"Reduction: {(100 * reduction):.3F} %"
+        progress_bar.channel.put(LINE)
     bible_listing.sort(key=lambda x: x.filename)
     ls_name = f'{dest}/{extn}_listing.tsv'
     with open(ls_name, 'w+', encoding='utf8') as listing_file:
@@ -173,8 +181,3 @@ if __name__ == "__main__":
             listing_file.write(item.tsv_line())
 
     print("\nAll files have been writted successfully\n")
-    for filename, ratio in size_ratios.items():
-        ss, sd, sr = ratio
-        LINE = f"noia size: {ss:09} \t{extn} file size: {sd:09} \t"
-        LINE += f"Reduction: {(100 * sr):.3F} %\t| File: {filename}"
-        print(LINE)
