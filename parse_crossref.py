@@ -3,7 +3,8 @@ This module contains functions to parse the read and filter cross-references
 from the Open Bible Cross-References database file.
 """
 
-from typing import Generator, NamedTuple
+from typing import NamedTuple
+
 
 class Verse(NamedTuple):
     book: int = 0

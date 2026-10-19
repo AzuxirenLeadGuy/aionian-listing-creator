@@ -1,13 +1,13 @@
 """
 The main function that prepares a listing for each noia file
 """
-import os
-import json
 import argparse
-from progressbar import ProgressWithLogging
+import json
+import os
 
-from parse_bible import parse_noia_bible
 from custom_text_format import custom_toml_format, tsv_store_bible
+from parse_bible import parse_noia_bible
+from progressbar import ProgressWithLogging
 from sqlite_store import sqlite_store_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
@@ -177,7 +177,6 @@ if __name__ == "__main__":
     bible_listing.sort(key=lambda x: x.filename)
     ls_name = f'{dest}/{extn}_listing.tsv'
     with open(ls_name, 'w+', encoding='utf8') as listing_file:
-        for item in bible_listing:
-            listing_file.write(item.tsv_line())
+        listing_file.writelines(item.tsv_line() for item in bible_listing)
 
     print("\nAll files have been writted successfully\n")

@@ -43,7 +43,7 @@ def sqlite_store_bible(bible_data: dict, file_name: str, save_tags:bool=False):
                 content TEXT
             );'''
         )
-        for book_id in data_index.keys():
+        for book_id in data_index:
             book_dict: dict[int, dict[int, str]] = bible_data[book_id]
             for chapter_id, chapter_dict in book_dict.items():
                 for verse_id, verse_content in chapter_dict.items():
