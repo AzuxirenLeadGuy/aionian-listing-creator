@@ -8,49 +8,49 @@
             "name": "Build JSON files: main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "module": "alc",
             "console": "integratedTerminal",
             "args": [
                 "-i=./AionianBible_DataFileStandard",
                 "-o=./aionian-json-listing",
                 "-f=json",
-            ]
+            ],
         },
         {
             "name": "Build SQLite files: main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "module": "alc",
             "console": "integratedTerminal",
             "args": [
                 "-i=./AionianBible_DataFileStandard",
                 "-o=./aionian-json-listing",
                 "-f=sqlite",
-            ]
+            ],
         },
         {
             "name": "Build TOML files: main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "module": "alc",
             "console": "integratedTerminal",
             "args": [
                 "-i=./AionianBible_DataFileStandard",
                 "-o=./aionian-json-listing",
                 "-f=toml",
-            ]
+            ],
         },
         {
             "name": "Build tsv files: main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "module": "alc",
             "console": "integratedTerminal",
             "args": [
                 "-i=./AionianBible_DataFileStandard",
                 "-o=./aionian-json-listing",
                 "-f=tsv",
-            ]
+            ],
         },
-    ]
+    ],
 }

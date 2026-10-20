@@ -37,7 +37,7 @@ def tsv_store_bible(bible_data: dict, file_name: str):
             chap_map :dict[int, dict[int, str]] = bible_data[book_id]
             total_chapters = len(chap_map)
             assert total_chapters < 256, "bible cannot have a book with chapters >= 256"
-            total_verses = sum([len(chap) for chap in chap_map.values()])
+            total_verses = sum([len(verse_map) for verse_map in chap_map.values()])
             assert total_verses < 0xffff, "bible cannot have a book with total combined verses >= 2**16"
             book_hex = gethex(book_id, 2)
             chap_total = gethex(total_chapters, 2)

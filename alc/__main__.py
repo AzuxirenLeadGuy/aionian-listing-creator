@@ -5,10 +5,10 @@ import argparse
 import json
 import os
 
-from custom_text_format import custom_toml_format, tsv_store_bible
-from parse_bible import parse_noia_bible
-from progressbar import ProgressWithLogging
-from sqlite_store import sqlite_store_bible
+from alc.custom_text_format import custom_toml_format, tsv_store_bible
+from alc.parse_bible import parse_noia_bible
+from alc.progressbar import ProgressWithLogging
+from alc.sqlite_store import sqlite_store_bible
 
 SOURCE_DIR_DEFAULT = "AionianBible_DataFileStandard"
 DEST_DIR_DEFAULT = "aionian-json-listing"
